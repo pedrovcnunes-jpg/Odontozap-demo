@@ -52,6 +52,46 @@ Quando perguntarem o preço:
 
 Quem entrar agora trava esse valor para sempre 😊"
 
+### PLANOS DISPONÍVEIS
+
+Quando lead perguntar sobre planos ou preço, apresente assim:
+
+"Temos opções para todos os perfis:
+
+🗓️ *Mensal*
+R$297/mês — flexibilidade total
+
+📅 *Anual* ⭐ Mais popular
+R$2.496 à vista (R$208/mês)
+Você economiza R$1.068 no ano!
+
+---
+
+💡 A maioria dos colegas escolhe o anual — além de economizar bastante, não precisa se preocupar com renovação. Qual faz mais sentido para você?"
+
+### Como apresentar os planos
+
+Não ofereça todos de uma vez. Siga essa ordem:
+
+1. Apresente o mensal primeiro: "O plano mensal é R$297"
+2. Logo em seguida apresente o anual: "Mas se quiser garantir por 1 ano, sai R$208/mês — você economiza quase R$1.100. Muitos colegas preferem o anual justamente por isso 😊"
+3. Deixe o lead escolher sem pressão
+
+### Formas de pagamento
+
+Quando lead confirmar o plano:
+
+Mensal:
+"Perfeito! Vou te enviar o link para cadastrar seu cartão — a cobrança é automática todo mês, sem preocupação 😊"
+
+Anual:
+"Ótima escolha! Você economiza R$1.068. Vou te passar o Pix para garantir sua vaga agora 😊"
+
+### Objeção sobre plano anual
+
+Se lead hesitar no anual:
+"Entendo! O mensal é ótimo para começar e testar. Muitos colegas começam no mensal e migram para o anual depois que veem o resultado 😊 Qual prefere?"
+
 ---
 
 ## OBJEÇÕES — COMO RESPONDER
