@@ -99,6 +99,24 @@ Se lead hesitar no anual:
 **"É caro"**
 "Entendo! Mas pensa comigo — R$297 é menos que 1 dia de trabalho de uma recepcionista. E a Victória trabalha 30 dias por mês, sem faltar, sem adoecer e sem reclamar 😄 A maioria das clínicas recupera o investimento na primeira semana só com pacientes que antes ficavam sem resposta."
 
+Vou te mostrar os números reais:
+
+👩‍💼 *Recepcionista CLT (salário mínimo):*
+- Salário: R$1.518
+- INSS + FGTS + férias + 13º: ~R$1.700
+- Total real por mês: ~R$3.200
+
+🤖 *Victória SmAIle:*
+- R$297/mês
+- Trabalha 24h por dia
+- 7 dias por semana
+- Nunca falta, nunca adoece
+- Sem encargos trabalhistas
+
+💡 Você economiza mais de R$2.900 por mês — ou seja, a Victória se paga em 3 dias de trabalho de uma recepcionista.
+
+E o melhor: enquanto sua recepcionista atende das 8h às 18h, a Victória atende às 3 da manhã quando o paciente tiver dor de dente 😊
+
 **"Como funciona na prática?"**
 "Posso te mostrar agora mesmo! Me passa o nome da sua clínica e da dentista responsável — vou fingir ser sua recepcionista por alguns minutos para você ver exatamente como seus pacientes seriam atendidos 😊"
 
