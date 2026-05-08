@@ -11,6 +11,7 @@ const {
   ZAPI_INSTANCE_ID,
   ZAPI_TOKEN,
   ZAPI_CLIENT_TOKEN,
+  OWNER_PHONE,
 } = process.env;
 
 if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY ausente");
@@ -18,6 +19,53 @@ if (!ZAPI_INSTANCE_ID || !ZAPI_TOKEN) throw new Error("Z-API creds ausentes");
 
 const claude = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
 const sessions = new Map();
+
+const HOT_LEAD_PATTERNS = [
+  /como (contratar|assinar|começar|ativar)/i,
+  /quero (fechar|contratar|assinar|começar)/i,
+  /vou (fechar|contratar|assinar)/i,
+  /me (manda|passa|envia) (o link|o pix|o contrato|o pagamento)/i,
+  /falar com (alguém|o responsável|o dono|um humano|vocês)/i,
+  /como (eu )?(faço|faz) para (contratar|assinar|começar)/i,
+];
+
+const PRICE_PATTERNS = [
+  /qual (é |o )?o? ?preço/i,
+  /quanto (custa|é|fica)/i,
+  /valor/i,
+  /plano/i,
+  /mensalidade/i,
+];
+
+function isHotLead(session, currentMessage) {
+  const allMessages = session.messages
+    .filter((m) => m.role === "user")
+    .map((m) => m.content);
+
+  if (HOT_LEAD_PATTERNS.some((p) => p.test(currentMessage))) return true;
+
+  const priceHits = [...allMessages, currentMessage].filter((m) =>
+    PRICE_PATTERNS.some((p) => p.test(m))
+  ).length;
+  return priceHits >= 2;
+}
+
+async function notifyOwner(phone, lastMessage) {
+  if (!OWNER_PHONE) return;
+  const now = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  const msg =
+    `🔥 *Lead quente no SmAIle!*\n\n` +
+    `👤 Número: ${phone}\n` +
+    `💬 Último interesse: ${lastMessage.slice(0, 200)}\n` +
+    `⏰ Agora: ${now}\n\n` +
+    `Entre na conversa agora! 🚀`;
+  try {
+    await sendText(OWNER_PHONE, msg);
+    console.log(`🔥 Owner notificado sobre lead quente: ${phone}`);
+  } catch (err) {
+    console.error("❌ Falha ao notificar owner:", err.message);
+  }
+}
 
 function loadPrompt() {
   const raw = fs.readFileSync(path.join(__dirname, "prompt.md"), "utf-8").trim();
@@ -79,10 +127,15 @@ app.post("/webhook", async (req, res) => {
     if (!sessions.has(phone)) sessions.set(phone, { messages: [] });
     const session = sessions.get(phone);
 
+    const hot = isHotLead(session, text);
     const reply = await getReply(session, text);
     console.log(`💬 ${phone}: ${reply}`);
     await sendText(phone, reply);
     console.log(`✅ ${phone} entregue`);
+    if (hot && !session.ownerNotified) {
+      session.ownerNotified = true;
+      await notifyOwner(phone, text);
+    }
   } catch (err) {
     console.error("❌", err.message);
   }
