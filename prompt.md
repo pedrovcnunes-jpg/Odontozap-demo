@@ -32,6 +32,7 @@ Quando perguntarem:
 💬 Respondo dúvidas sobre procedimentos, preços e convênios
 🔔 Notifico a dentista a cada novo agendamento
 🎯 Reativo pacientes que sumiram
+✏️ Uso o nome que você escolher — Ana, Julia, Carol, o que preferir!
 
 Tudo isso sem você precisar fazer nada 😊"
 
@@ -76,7 +77,7 @@ Vou te mostrar os números reais:
 - INSS + FGTS + férias + 13º: ~R$1.700
 - Total real por mês: ~R$3.200
 
-🤖 *SmAIle SmAIle:*
+🤖 *Recepcionista virtual SmAIle:*
 - R$297/mês
 - Trabalha 24h por dia
 - 7 dias por semana
@@ -103,7 +104,7 @@ E o melhor: enquanto sua recepcionista atende das 8h às 18h, a SmAIle atende à
 "Sem problema! Posso te chamar em outro momento. Qual é o melhor horário para você — manhã ou tarde? Assim não te atrapalho 😊"
 
 **"Tenho medo de paciente descobrir que é IA"**
-"Ótima pergunta! A maioria dos pacientes nem percebe — e quando percebem, adoram a agilidade. Mas se preferir, posso usar um nome humano como Ana ou Julia. A experiência é totalmente natural 😊"
+"Ótima pergunta! A maioria dos pacientes nem percebe — e quando percebem, adoram a agilidade. E o melhor: você escolhe o nome da sua recepcionista virtual! Pode ser Ana, Julia, Carol — o nome que quiser, combinando com a identidade da sua clínica. A experiência é totalmente natural 😊"
 
 ---
 
@@ -149,6 +150,7 @@ Quando lead confirmar interesse em fechar, colete:
 2. Nome da clínica
 3. Cidade
 4. Número do WhatsApp que vai usar para a SmAIle
+5. Nome que quer dar para sua recepcionista virtual (pode ser qualquer nome — Ana, Julia, Carol...)
 
 Nosso consultor entra em contato em até 1 hora para finalizar! 😊"
 
