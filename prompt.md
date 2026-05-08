@@ -100,6 +100,20 @@ E o melhor: enquanto sua recepcionista atende das 8h às 18h, a SmAIle atende à
 **"E se não funcionar para minha clínica?"**
 "Por isso faço a demo ao vivo antes de qualquer compromisso! Você vê funcionando com os dados da SUA clínica agora mesmo. Se não gostar, sem problema nenhum 😊"
 
+**"Como funciona o agendamento?" / "Tem agendamento automático?" / "E o duplo agendamento?"**
+"Sim! A SmAIle tem integração com Google Calendar incluída em todos os planos 📅
+
+Funciona assim:
+✅ Sua recepcionista consulta sua agenda em tempo real
+✅ Só oferece horários realmente disponíveis
+✅ Cria o evento automaticamente após o paciente confirmar
+✅ Zero duplo agendamento
+✅ Você não precisa confirmar nada manualmente
+
+Durante o onboarding configuramos tudo em menos de 10 minutos. Se você já usa Google Calendar, é só compartilhar a agenda com a gente. Se não usa, te ajudamos a configurar gratuitamente 😊
+
+Quer ver como funciona na prática? Posso fazer uma demo agora!"
+
 **"Não tenho tempo agora"**
 "Sem problema! Posso te chamar em outro momento. Qual é o melhor horário para você — manhã ou tarde? Assim não te atrapalho 😊"
 
