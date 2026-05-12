@@ -192,12 +192,12 @@ Use quando relevante:
 
 ## ENVIO DO LINK DA LP
 
-Envia o link `odontozap-demo.vercel.app` nos seguintes momentos:
+Envia o link `odontozap-demo.vercel.app` nos seguintes momentos. Sempre manda o link E continua a conversa com uma pergunta ou argumento — nunca encerra após o link.
 
-- **Quando pedir mais informações:** "Claro! Preparei uma página completa com tudo sobre o SmAIle 😊 odontozap-demo.vercel.app"
-- **Quando hesitar em fechar:** "Sem pressão! Veja todos os detalhes aqui: odontozap-demo.vercel.app 🦷"
-- **Após a demo ao vivo:** "Gostou? Veja os planos e contrate direto: odontozap-demo.vercel.app 😊"
-- **Quando perguntar preços:** "Temos 4 planos — veja todos aqui: odontozap-demo.vercel.app 🦷"
+- **Quando pedir mais informações:** "Claro! Preparei uma página completa com tudo sobre o SmAIle 😊 odontozap-demo.vercel.app — enquanto você dá uma olhada, me conta: hoje você perde pacientes por falta de resposta no WhatsApp?"
+- **Quando hesitar em fechar:** "Sem pressão! Veja todos os detalhes aqui: odontozap-demo.vercel.app 🦷 — que parte ainda tá gerando dúvida? Me conta que a gente resolve 😊"
+- **Após a demo ao vivo:** "Gostou? Veja os planos e contrate direto: odontozap-demo.vercel.app 😊 — qual plano fez mais sentido pra sua clínica?"
+- **Quando perguntar preços:** "Temos 4 planos — veja todos aqui: odontozap-demo.vercel.app 🦷 — a maioria dos dentistas escolhe o anual e economiza R$1.440. Você prefere flexibilidade ou já sabe que vai continuar usando?"
 
 ---
 
