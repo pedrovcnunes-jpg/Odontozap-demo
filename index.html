@@ -1,0 +1,1701 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmAIle — Recepcionista Virtual com IA</title>
+<link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600&family=Orbitron:wght@700;900&family=Audiowide&family=Exo+2:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --teal: #0891b2;
+  --teal-dark: #0e7490;
+  --teal-light: #cffafe;
+  --green: #16a34a;
+  --green-light: #dcfce7;
+  --dark: #0a1628;
+  --dark-2: #112240;
+  --text: #94a3b8;
+  --white: #ffffff;
+  --card-bg: rgba(255,255,255,0.04);
+  --border: rgba(8,145,178,0.2);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: var(--dark);
+  color: var(--white);
+  overflow-x: hidden;
+}
+
+/* NOISE TEXTURE */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.4;
+}
+
+/* GLOW ORBS */
+.orb {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(120px);
+  pointer-events: none;
+  z-index: 0;
+}
+.orb-1 { width: 600px; height: 600px; background: rgba(8,145,178,0.15); top: -200px; right: -200px; }
+.orb-2 { width: 400px; height: 400px; background: rgba(22,163,74,0.1); bottom: 20%; left: -150px; }
+
+/* NAV */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  padding: 20px 5%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(10,22,40,0.8);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: 'Clash Display', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.nav-logo img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.nav-logo span { color: var(--green); }
+
+.nav-cta {
+  background: var(--teal);
+  color: white;
+  padding: 10px 24px;
+  border-radius: 50px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.3s;
+  border: none;
+  cursor: pointer;
+}
+
+.nav-cta:hover {
+  background: var(--teal-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(8,145,178,0.4);
+}
+
+/* HERO */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 120px 5% 80px;
+  position: relative;
+  z-index: 1;
+}
+
+.hero-content {
+  max-width: 680px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(8,145,178,0.15);
+  border: 1px solid rgba(8,145,178,0.4);
+  padding: 8px 16px;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  color: var(--teal-light);
+  margin-bottom: 32px;
+  animation: fadeUp 0.6s ease both;
+}
+
+.hero-badge::before {
+  content: '';
+  width: 8px; height: 8px;
+  background: var(--teal);
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.3); }
+}
+
+.hero h1 {
+  font-family: 'Clash Display', sans-serif;
+  font-size: clamp(2.8rem, 6vw, 4.5rem);
+  font-weight: 700;
+  line-height: 1.1;
+  margin-bottom: 24px;
+  animation: fadeUp 0.6s 0.1s ease both;
+}
+
+.hero h1 span {
+  background: linear-gradient(135deg, var(--teal), var(--green));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero p {
+  font-size: 1.2rem;
+  color: var(--text);
+  line-height: 1.7;
+  margin-bottom: 40px;
+  animation: fadeUp 0.6s 0.2s ease both;
+}
+
+.hero-ctas {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  animation: fadeUp 0.6s 0.3s ease both;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--teal), var(--teal-dark));
+  color: white;
+  padding: 16px 32px;
+  border-radius: 50px;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 1rem;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 0 40px rgba(8,145,178,0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 20px 50px rgba(8,145,178,0.5);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: white;
+  padding: 16px 32px;
+  border-radius: 50px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1rem;
+  border: 1px solid var(--border);
+  transition: all 0.3s;
+}
+
+.btn-secondary:hover {
+  border-color: var(--teal);
+  background: rgba(8,145,178,0.1);
+}
+
+.hero-image {
+  position: static;
+  transform: none;
+  width: 420px;
+  margin-top: 48px;
+  animation: float 6s ease-in-out infinite, fadeUp 0.8s 0.4s ease both;
+  background: transparent;
+  filter: drop-shadow(0 30px 60px rgba(8,145,178,0.3));
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-12px); }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* STATS */
+.stats {
+  padding: 60px 5%;
+  position: relative;
+  z-index: 1;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 40px;
+}
+
+.stat {
+  text-align: center;
+}
+
+.stat-number {
+  font-family: 'Clash Display', sans-serif;
+  font-size: 2.5rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--teal), var(--green));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.stat-label {
+  color: var(--text);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+
+/* FEATURES */
+.features {
+  padding: 100px 5%;
+  position: relative;
+  z-index: 1;
+}
+
+.section-label {
+  text-align: center;
+  color: var(--teal);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.section-title {
+  font-family: 'Clash Display', sans-serif;
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.section-sub {
+  text-align: center;
+  color: var(--text);
+  font-size: 1.1rem;
+  max-width: 600px;
+  margin: 0 auto 60px;
+  line-height: 1.7;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.feature-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 32px;
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+
+.feature-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(8,145,178,0.05), transparent);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.feature-card:hover {
+  border-color: var(--teal);
+  transform: translateY(-4px);
+  box-shadow: 0 20px 50px rgba(8,145,178,0.15);
+}
+
+.feature-card:hover::before { opacity: 1; }
+
+.feature-icon {
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+  display: block;
+}
+
+.feature-card h3 {
+  font-family: 'Clash Display', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.feature-card p {
+  color: var(--text);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+/* WHATSAPP MOCKUP */
+.demo-section {
+  padding: 100px 5%;
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(180deg, transparent, rgba(8,145,178,0.05), transparent);
+}
+
+.demo-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: center;
+}
+
+.demo-text h2 {
+  font-family: 'Clash Display', sans-serif;
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 700;
+  margin-bottom: 24px;
+  line-height: 1.2;
+}
+
+.demo-text h2 span {
+  background: linear-gradient(135deg, var(--teal), var(--green));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.demo-text p {
+  color: var(--text);
+  font-size: 1.05rem;
+  line-height: 1.7;
+  margin-bottom: 32px;
+}
+
+.demo-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.demo-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+.demo-list li::before {
+  content: '✓';
+  width: 24px; height: 24px;
+  background: var(--green-light);
+  color: var(--green);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* WHATSAPP CHAT */
+.chat-mockup {
+  background: #1a2632;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 40px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05);
+  max-width: 360px;
+  margin: 0 auto;
+}
+
+.chat-header {
+  background: #075e54;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.chat-avatar {
+  width: 42px; height: 42px;
+  background: var(--teal);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+}
+
+.chat-info strong {
+  display: block;
+  color: white;
+  font-size: 0.95rem;
+}
+
+.chat-info span {
+  color: rgba(255,255,255,0.6);
+  font-size: 0.8rem;
+}
+
+.chat-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: #0b1420;
+  height: 420px;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+
+.chat-body::-webkit-scrollbar {
+  width: 4px;
+}
+.chat-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+.chat-body::-webkit-scrollbar-thumb {
+  background: rgba(8,145,178,0.3);
+  border-radius: 2px;
+}
+
+.msg {
+  max-width: 85%;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  animation: msgIn 0.4s ease both;
+}
+
+.msg-received {
+  background: #1f2e3d;
+  color: #e2e8f0;
+  border-radius: 0 12px 12px 12px;
+  align-self: flex-start;
+}
+
+.msg-sent {
+  background: #005c4b;
+  color: #e2e8f0;
+  border-radius: 12px 0 12px 12px;
+  align-self: flex-end;
+}
+
+.msg-time {
+  font-size: 0.7rem;
+  opacity: 0.5;
+  text-align: right;
+  margin-top: 4px;
+}
+
+@keyframes msgIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* PRICING */
+.pricing {
+  padding: 100px 5%;
+  position: relative;
+  z-index: 1;
+}
+
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.pricing-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 40px;
+  position: relative;
+  transition: all 0.3s;
+}
+
+.pricing-card.featured {
+  border-color: var(--teal);
+  background: rgba(8,145,178,0.08);
+  box-shadow: 0 0 60px rgba(8,145,178,0.15);
+}
+
+.pricing-card:hover {
+  transform: translateY(-4px);
+}
+
+.popular-badge {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, var(--teal), var(--green));
+  color: white;
+  padding: 6px 20px;
+  border-radius: 50px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.pricing-plan {
+  font-size: 0.85rem;
+  color: var(--teal);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 16px;
+}
+
+.pricing-price {
+  font-family: 'Clash Display', sans-serif;
+  font-size: 3rem;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.pricing-price sup {
+  font-size: 1.2rem;
+  vertical-align: super;
+}
+
+.pricing-period {
+  color: var(--text);
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+}
+
+.pricing-economy {
+  color: var(--green);
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 32px;
+}
+
+.pricing-features {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.pricing-features li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.pricing-features li::before {
+  content: '✓';
+  color: var(--green);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.pricing-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 50px;
+  border: none;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 1rem;
+  transition: all 0.3s;
+  text-decoration: none;
+  display: block;
+  text-align: center;
+}
+
+.pricing-btn-primary {
+  background: linear-gradient(135deg, var(--teal), var(--teal-dark));
+  color: white;
+  box-shadow: 0 10px 30px rgba(8,145,178,0.3);
+}
+
+.pricing-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 40px rgba(8,145,178,0.4);
+}
+
+.pricing-btn-secondary {
+  background: transparent;
+  color: white;
+  border: 1px solid var(--border);
+}
+
+.pricing-btn-secondary:hover {
+  border-color: var(--teal);
+  background: rgba(8,145,178,0.1);
+}
+
+.pricing-note {
+  text-align: center;
+  color: var(--text);
+  font-size: 0.85rem;
+  margin-top: 32px;
+}
+
+/* TESTIMONIALS */
+.testimonials {
+  padding: 100px 5%;
+  position: relative;
+  z-index: 1;
+}
+
+.testimonials-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.testimonial-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 28px;
+  transition: all 0.3s;
+}
+
+.testimonial-card:hover {
+  border-color: var(--teal);
+  transform: translateY(-4px);
+}
+
+.testimonial-stars {
+  color: #fbbf24;
+  font-size: 1rem;
+  margin-bottom: 16px;
+}
+
+.testimonial-text {
+  color: var(--text);
+  font-size: 0.95rem;
+  line-height: 1.7;
+  margin-bottom: 20px;
+  font-style: italic;
+}
+
+.testimonial-author {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.author-avatar {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  background: rgba(8,145,178,0.2);
+}
+
+.author-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.author-role {
+  color: var(--text);
+  font-size: 0.8rem;
+}
+
+/* FAQ */
+.faq {
+  padding: 100px 5%;
+  position: relative;
+  z-index: 1;
+}
+
+.faq-list {
+  max-width: 700px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.faq-item {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: all 0.3s;
+}
+
+.faq-item:hover { border-color: var(--teal); }
+
+.faq-question {
+  padding: 20px 24px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.95rem;
+}
+
+.faq-question::after {
+  content: '+';
+  font-size: 1.5rem;
+  color: var(--teal);
+  transition: transform 0.3s;
+}
+
+.faq-item.open .faq-question::after { transform: rotate(45deg); }
+
+.faq-answer {
+  padding: 0 24px;
+  color: var(--text);
+  font-size: 0.9rem;
+  line-height: 1.7;
+  max-height: 0;
+  overflow: hidden;
+  transition: all 0.3s;
+}
+
+.faq-item.open .faq-answer {
+  max-height: 200px;
+  padding: 0 24px 20px;
+}
+
+/* CTA FINAL */
+.cta-final {
+  padding: 100px 5%;
+  position: relative;
+  z-index: 1;
+  text-align: center;
+}
+
+.cta-box {
+  max-width: 700px;
+  margin: 0 auto;
+  background: linear-gradient(135deg, rgba(8,145,178,0.15), rgba(22,163,74,0.1));
+  border: 1px solid var(--teal);
+  border-radius: 32px;
+  padding: 60px 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+.cta-box::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(8,145,178,0.1) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.cta-box h2 {
+  font-family: 'Clash Display', sans-serif;
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.cta-box p {
+  color: var(--text);
+  font-size: 1.1rem;
+  margin-bottom: 32px;
+  line-height: 1.6;
+}
+
+.vagas-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(239,68,68,0.15);
+  border: 1px solid rgba(239,68,68,0.4);
+  color: #fca5a5;
+  padding: 8px 20px;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 32px;
+}
+
+.vagas-badge::before {
+  content: '';
+  width: 8px; height: 8px;
+  background: #ef4444;
+  border-radius: 50%;
+  animation: pulse 1.5s infinite;
+}
+
+/* FOOTER */
+footer {
+  padding: 40px 5%;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+
+.footer-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Clash Display', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.footer-logo img {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+}
+
+.footer-logo span { color: var(--green); }
+
+footer p {
+  color: var(--text);
+  font-size: 0.85rem;
+}
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  .hero { flex-direction: column; padding-top: 140px; }
+  .hero-image { position: relative; right: auto; top: auto; transform: none; width: 280px; margin: 40px auto 0; animation: float 6s ease-in-out infinite; }
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .features-grid { grid-template-columns: 1fr; }
+  .demo-container { grid-template-columns: 1fr; }
+  .pricing-grid { grid-template-columns: 1fr; }
+  .testimonials-grid { grid-template-columns: 1fr; }
+  footer { flex-direction: column; gap: 16px; text-align: center; }
+}
+</style>
+</head>
+<body>
+
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">
+    <img src="https://raw.githubusercontent.com/pedrovcnunes-jpg/Odontozap-demo/master/smaile-logo-nobg.png" alt="SmAIle">
+    <span style="font-family: Orbitron, sans-serif; font-weight: 700; font-size: 1.2rem; letter-spacing: 2px;"><span style="color: #67e8f9;">Sm</span><span style="color: #16a34a;">AI</span><span style="color: #67e8f9;">le</span></span>
+  </div>
+  <a href="https://wa.me/5521999999999?text=Oi%20SmAIle!%20Vi%20o%20site%20e%20quero%20saber%20mais" target="_blank" class="nav-cta" style="background: #25D366; display:inline-flex; align-items:center; gap:8px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg> Testar Grátis →</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-badge">🦷 Criado por dentista, para dentistas</div>
+    <h1>Sua clínica atendendo <span>24 horas</span> no WhatsApp</h1>
+    <p>A SmAIle é sua recepcionista virtual com IA. Agenda consultas, confirma presença e nunca deixa paciente sem resposta — enquanto você dorme.</p>
+    <div class="hero-ctas">
+      <a href="https://wa.me/5521999999999?text=Oi%20SmAIle!%20Vi%20o%20site%20e%20quero%20saber%20mais" target="_blank" class="btn-primary" style="background: #25D366; display:inline-flex; align-items:center; gap:8px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg> Testar agora grátis</a>
+      <a href="#demo" class="btn-secondary">Ver como funciona →</a>
+    </div>
+  </div>
+  <img src="https://raw.githubusercontent.com/pedrovcnunes-jpg/Odontozap-demo/master/smaile-logo-nobg.png" alt="SmAIle" class="hero-image" style="background: transparent;">
+</section>
+
+<!-- STATS -->
+<div class="stats">
+  <div class="stat">
+    <div class="stat-number">24h</div>
+    <div class="stat-label">Atendimento ininterrupto</div>
+  </div>
+  <div class="stat">
+    <div class="stat-number">-40%</div>
+    <div class="stat-label">Redução de faltas</div>
+  </div>
+  <div class="stat">
+    <div class="stat-number">R$0</div>
+    <div class="stat-label">Custo por mensagem</div>
+  </div>
+  <div class="stat">
+    <div class="stat-number">24h</div>
+    <div class="stat-label">Para ir ao ar</div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="features">
+  <div class="section-label">Funcionalidades</div>
+  <h2 class="section-title">Tudo que sua clínica precisa</h2>
+  <p class="section-sub">A SmAIle cuida do atendimento para você focar no que realmente importa — seus pacientes.</p>
+
+  <div class="features-grid">
+    <div class="feature-card">
+      <span class="feature-icon">📅</span>
+      <h3>Agendamento Automático</h3>
+      <p>A SmAIle agenda consultas diretamente no WhatsApp, coleta todos os dados e notifica você na hora.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">✅</span>
+      <h3>Confirmação de Consultas</h3>
+      <p>Envia confirmação 24h antes automaticamente. Paciente confirma com SIM ou NÃO — e ela já reagenda se necessário.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🌙</span>
+      <h3>Atendimento 24/7</h3>
+      <p>Fim de semana, feriado, madrugada — a SmAIle está sempre lá. Nenhum paciente fica sem resposta.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">💬</span>
+      <h3>FAQ Odontológico</h3>
+      <p>Responde dúvidas sobre procedimentos, preços, convênios e cuidados pós-tratamento com empatia.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🔔</span>
+      <h3>Notificação Instantânea</h3>
+      <p>Cada novo agendamento chega para você no WhatsApp com todos os dados do paciente.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🎯</span>
+      <h3>Reativação de Pacientes</h3>
+      <p>Identifica pacientes que sumiram e inicia conversa para trazer de volta à clínica.</p>
+    </div>
+    <div class="feature-card" style="border-color: rgba(22,163,74,0.4); background: rgba(22,163,74,0.05);">
+      <span class="feature-icon">📅</span>
+      <h3>Google Calendar <span style="background: linear-gradient(135deg, #4ade80, #0891b2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 0.8rem;">GRÁTIS</span></h3>
+      <p>Integração completa com Google Calendar — agenda em tempo real, zero duplo agendamento e eventos criados automaticamente.</p>
+    </div>
+  </div>
+</section>
+
+<!-- DEMO -->
+<section class="demo-section" id="demo">
+  <div class="demo-container">
+    <div class="demo-text">
+      <h2>Veja a <span>SmAIle</span> em ação</h2>
+      <p>Seus pacientes são atendidos com empatia e profissionalismo — como se fosse uma recepcionista real. Porque para eles, ela é.</p>
+      <ul class="demo-list">
+        <li>Responde em segundos, a qualquer hora</li>
+        <li>Chama o paciente pelo nome</li>
+        <li>Demonstra empatia com dor e ansiedade</li>
+        <li>Agenda sem precisar de você</li>
+        <li>Transfere para humano quando necessário</li>
+      </ul>
+    </div>
+
+    <div class="chat-mockup">
+      <div class="chat-header">
+        <div class="chat-avatar">🦷</div>
+        <div class="chat-info">
+          <strong>Clínica Sorriso Dourado</strong>
+          <span>SmAIle • online agora</span>
+        </div>
+      </div>
+      <div class="chat-body" id="chatBody">
+        <div class="msg msg-sent" style="animation-delay:0s">
+          Oi, queria marcar uma consulta
+          <div class="msg-time">23:41 ✓✓</div>
+        </div>
+        <div class="msg msg-received" style="animation-delay:0.3s">
+          Olá! 😊 Sou a SmAIle, recepcionista virtual da Clínica Sorriso Dourado. Fico feliz em te atender! Qual é o seu nome?
+          <div class="msg-time">23:41</div>
+        </div>
+        <div class="msg msg-sent" style="animation-delay:0.6s">
+          Maria Silva
+          <div class="msg-time">23:41 ✓✓</div>
+        </div>
+        <div class="msg msg-received" style="animation-delay:0.9s">
+          Que nome lindo, Maria! 😊 Seja bem-vinda à nossa clínica! É sua primeira vez aqui?
+          <div class="msg-time">23:42</div>
+        </div>
+        <div class="msg msg-sent" style="animation-delay:1.2s">
+          Sim, primeira vez! Tô com uma dorzinha no dente há uns dias
+          <div class="msg-time">23:42 ✓✓</div>
+        </div>
+        <div class="msg msg-received" style="animation-delay:1.5s">
+          Que pena, Maria 😟 Dor de dente é muito desconfortável! Vamos resolver isso o quanto antes. O Dr. Carlos tem horário ainda essa semana — quinta às 14h ou sexta às 9h. Qual prefere?
+          <div class="msg-time">23:42</div>
+        </div>
+        <div class="msg msg-sent" style="animation-delay:1.8s">
+          Quinta às 14h por favor!
+          <div class="msg-time">23:43 ✓✓</div>
+        </div>
+        <div class="msg msg-received" style="animation-delay:2.1s">
+          Perfeito! 🦷 Para confirmar seu agendamento, me passa seu número de telefone?
+          <div class="msg-time">23:43</div>
+        </div>
+        <div class="msg msg-sent" style="animation-delay:2.4s">
+          (21) 99876-5432
+          <div class="msg-time">23:43 ✓✓</div>
+        </div>
+        <div class="msg msg-received" style="animation-delay:2.7s">
+          ✅ Agendamento confirmado, Maria!<br><br>
+          📅 Quinta-feira<br>
+          🕐 14h00<br>
+          📍 Rua das Flores, 123 - Copacabana<br>
+          👨‍⚕️ Dr. Carlos Silva<br><br>
+          Vou te mandar uma confirmação amanhã! 😊
+          <div class="msg-time">23:43</div>
+        </div>
+        <div class="msg msg-sent" style="animation-delay:3.0s">
+          Obrigada! Tem estacionamento lá?
+          <div class="msg-time">23:44 ✓✓</div>
+        </div>
+        <div class="msg msg-received" style="animation-delay:3.3s">
+          Sim! Temos estacionamento conveniado logo ao lado 🚗 Fica à vontade para chegar de carro. Alguma outra dúvida, Maria?
+          <div class="msg-time">23:44</div>
+        </div>
+        <div class="msg msg-sent" style="animation-delay:3.6s">
+          Não, era isso mesmo. Muito obrigada!
+          <div class="msg-time">23:44 ✓✓</div>
+        </div>
+        <div class="msg msg-received" style="animation-delay:3.9s">
+          Disponha, Maria! 😄 Te esperamos quinta. Qualquer dúvida é só chamar — estou aqui 24h! Cuide-se 🦷✨
+          <div class="msg-time">23:44</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+
+
+<!-- NOME PERSONALIZADO -->
+<section style="padding: 60px 5%; position: relative; z-index: 1;">
+  <div style="max-width: 900px; margin: 0 auto; background: rgba(8,145,178,0.08); border: 1px solid rgba(8,145,178,0.3); border-radius: 24px; padding: 48px; display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center;">
+    <div>
+      <div style="color: #0891b2; font-size: 0.85rem; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 16px;">Personalização</div>
+      <h2 style="font-family: Clash Display, sans-serif; font-size: 2rem; font-weight: 700; margin-bottom: 16px; line-height: 1.2;">Sua recepcionista, <span style="background: linear-gradient(135deg, #0891b2, #16a34a); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">seu nome</span></h2>
+      <p style="color: #94a3b8; font-size: 1rem; line-height: 1.7; margin-bottom: 24px;">Cada clínica pode dar um nome único para sua recepcionista virtual. Ela pode se chamar Ana, Sofia, Julia — o que fizer mais sentido para a identidade da sua clínica.</p>
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 12px; color: #94a3b8; font-size: 0.95rem;">
+          <span style="color: #16a34a; font-weight: 700;">✓</span> Nome personalizado para cada clínica
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px; color: #94a3b8; font-size: 0.95rem;">
+          <span style="color: #16a34a; font-weight: 700;">✓</span> Paciente sente que fala com sua equipe
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px; color: #94a3b8; font-size: 0.95rem;">
+          <span style="color: #16a34a; font-weight: 700;">✓</span> Personalidade adaptada ao tom da clínica
+        </div>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 8px;">Exemplos de nomes escolhidos por clientes:</p>
+      <div style="display: flex; flex-wrap: wrap; gap: 12px;">
+        <span style="background: rgba(8,145,178,0.15); border: 1px solid rgba(8,145,178,0.4); color: #67e8f9; padding: 8px 20px; border-radius: 50px; font-size: 0.9rem;">Ana 😊</span>
+        <span style="background: rgba(22,163,74,0.15); border: 1px solid rgba(22,163,74,0.4); color: #4ade80; padding: 8px 20px; border-radius: 50px; font-size: 0.9rem;">Sofia 🦷</span>
+        <span style="background: rgba(8,145,178,0.15); border: 1px solid rgba(8,145,178,0.4); color: #67e8f9; padding: 8px 20px; border-radius: 50px; font-size: 0.9rem;">Julia ✨</span>
+        <span style="background: rgba(22,163,74,0.15); border: 1px solid rgba(22,163,74,0.4); color: #4ade80; padding: 8px 20px; border-radius: 50px; font-size: 0.9rem;">Maria 💬</span>
+        <span style="background: rgba(8,145,178,0.15); border: 1px solid rgba(8,145,178,0.4); color: #67e8f9; padding: 8px 20px; border-radius: 50px; font-size: 0.9rem;">Carol 🌟</span>
+        <span style="background: rgba(139,92,246,0.15); border: 1px solid rgba(139,92,246,0.4); color: #c4b5fd; padding: 8px 20px; border-radius: 50px; font-size: 0.9rem;">Seu nome aqui ✏️</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- GOOGLE CALENDAR SECTION -->
+<section style="padding: 80px 5%; position: relative; z-index: 1; background: linear-gradient(180deg, transparent, rgba(22,163,74,0.05), transparent);">
+  <div style="max-width: 1000px; margin: 0 auto;">
+
+    <!-- Badge -->
+    <div style="text-align: center; margin-bottom: 48px;">
+      <span style="background: rgba(22,163,74,0.15); border: 1px solid rgba(22,163,74,0.4); color: #4ade80; padding: 8px 20px; border-radius: 50px; font-size: 0.85rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;">✨ Incluso em todos os planos</span>
+      <h2 style="font-family: Clash Display, sans-serif; font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; margin-top: 24px; margin-bottom: 16px;">
+        Integração gratuita com<br>
+        <span style="background: linear-gradient(135deg, #4ade80, #0891b2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Google Calendar</span>
+      </h2>
+      <p style="color: #94a3b8; font-size: 1.1rem; max-width: 600px; margin: 0 auto; line-height: 1.7;">Sua recepcionista consulta sua agenda em tempo real e agenda consultas automaticamente — sem duplo agendamento, sem você confirmar nada.</p>
+    </div>
+
+    <!-- Main card -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center;">
+      
+      <!-- Left - Steps -->
+      <div style="display: flex; flex-direction: column; gap: 24px;">
+        
+        <div style="display: flex; gap: 20px; align-items: flex-start;">
+          <div style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #16a34a, #0891b2); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0;">📱</div>
+          <div>
+            <h3 style="font-family: Clash Display, sans-serif; font-size: 1.1rem; font-weight: 600; margin-bottom: 6px;">Paciente manda mensagem</h3>
+            <p style="color: #94a3b8; font-size: 0.9rem; line-height: 1.6;">Pode ser às 23h, no domingo, no feriado — a SmAIle está sempre disponível.</p>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 20px; align-items: flex-start;">
+          <div style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #16a34a, #0891b2); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0;">📅</div>
+          <div>
+            <h3 style="font-family: Clash Display, sans-serif; font-size: 1.1rem; font-weight: 600; margin-bottom: 6px;">SmAIle consulta sua agenda</h3>
+            <p style="color: #94a3b8; font-size: 0.9rem; line-height: 1.6;">Verifica os horários disponíveis em tempo real no seu Google Calendar.</p>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 20px; align-items: flex-start;">
+          <div style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #16a34a, #0891b2); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0;">✅</div>
+          <div>
+            <h3 style="font-family: Clash Display, sans-serif; font-size: 1.1rem; font-weight: 600; margin-bottom: 6px;">Paciente escolhe e confirma</h3>
+            <p style="color: #94a3b8; font-size: 0.9rem; line-height: 1.6;">Só oferece horários reais — zero chance de duplo agendamento.</p>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 20px; align-items: flex-start;">
+          <div style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #16a34a, #0891b2); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0;">🎉</div>
+          <div>
+            <h3 style="font-family: Clash Display, sans-serif; font-size: 1.1rem; font-weight: 600; margin-bottom: 6px;">Evento criado automaticamente</h3>
+            <p style="color: #94a3b8; font-size: 0.9rem; line-height: 1.6;">Consulta já aparece no seu Google Calendar com nome, telefone e procedimento do paciente.</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right - Card -->
+      <div style="background: rgba(22,163,74,0.08); border: 1px solid rgba(22,163,74,0.3); border-radius: 24px; padding: 40px;">
+        
+        <div style="text-align: center; margin-bottom: 32px;">
+          <div style="font-size: 4rem; margin-bottom: 12px;">📅</div>
+          <h3 style="font-family: Clash Display, sans-serif; font-size: 1.4rem; font-weight: 700; color: #4ade80;">Google Calendar</h3>
+          <p style="color: #94a3b8; font-size: 0.9rem;">Integração gratuita inclusa</p>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 32px;">
+          <div style="display: flex; align-items: center; gap: 12px; color: #94a3b8; font-size: 0.9rem;">
+            <span style="color: #4ade80; font-size: 1.1rem;">✓</span> Agenda consultada em tempo real
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px; color: #94a3b8; font-size: 0.9rem;">
+            <span style="color: #4ade80; font-size: 1.1rem;">✓</span> Zero duplo agendamento
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px; color: #94a3b8; font-size: 0.9rem;">
+            <span style="color: #4ade80; font-size: 1.1rem;">✓</span> Eventos criados automaticamente
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px; color: #94a3b8; font-size: 0.9rem;">
+            <span style="color: #4ade80; font-size: 1.1rem;">✓</span> Notificação 24h antes da consulta
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px; color: #94a3b8; font-size: 0.9rem;">
+            <span style="color: #4ade80; font-size: 1.1rem;">✓</span> Configuração gratuita no onboarding
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px; color: #94a3b8; font-size: 0.9rem;">
+            <span style="color: #4ade80; font-size: 1.1rem;">✓</span> Funciona sem Google Calendar também
+          </div>
+        </div>
+
+        <div style="background: rgba(22,163,74,0.1); border: 1px solid rgba(22,163,74,0.3); border-radius: 12px; padding: 16px; text-align: center;">
+          <p style="color: #4ade80; font-weight: 700; font-size: 0.95rem; margin: 0;">🎁 Incluso gratuitamente em todos os planos</p>
+          <p style="color: #94a3b8; font-size: 0.8rem; margin-top: 4px;">Nenhum custo adicional</p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+<!-- CLT COMPARISON -->
+<section style="padding: 80px 5%; position: relative; z-index: 1;">
+  <div style="max-width: 900px; margin: 0 auto;">
+    <div style="text-align: center; margin-bottom: 48px;">
+      <div class="section-label">Comparativo</div>
+      <h2 class="section-title">Mais barato que uma recepcionista</h2>
+      <p class="section-sub">Veja quanto custa manter uma recepcionista CLT vs a SmAIle</p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 24px; align-items: center;">
+      
+      <!-- Recepcionista CLT -->
+      <div style="background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.3); border-radius: 24px; padding: 40px;">
+        <div style="text-align: center; margin-bottom: 24px;">
+          <span style="font-size: 3rem;">👩‍💼</span>
+          <h3 style="font-family: Clash Display, sans-serif; font-size: 1.4rem; margin-top: 12px; color: #fca5a5;">Recepcionista CLT</h3>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+            <span style="color: #94a3b8; font-size: 0.9rem;">Salário mínimo</span>
+            <span style="color: white; font-weight: 600;">R$1.518</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+            <span style="color: #94a3b8; font-size: 0.9rem;">INSS + FGTS</span>
+            <span style="color: white; font-weight: 600;">R$680</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+            <span style="color: #94a3b8; font-size: 0.9rem;">Férias + 13º (rateado)</span>
+            <span style="color: white; font-weight: 600;">R$380</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+            <span style="color: #94a3b8; font-size: 0.9rem;">Vale transporte/refeição</span>
+            <span style="color: white; font-weight: 600;">R$400</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding: 14px 0 0;">
+            <span style="color: #fca5a5; font-weight: 700;">Total mensal real</span>
+            <span style="color: #fca5a5; font-weight: 700; font-size: 1.3rem;">~R$2.978</span>
+          </div>
+        </div>
+        <div style="margin-top: 20px; background: rgba(239,68,68,0.1); border-radius: 12px; padding: 12px; text-align: center;">
+          <span style="color: #fca5a5; font-size: 0.85rem;">⏰ Atende só 8h às 18h<br>❌ Falta, adoece, tira férias<br>❌ Encargos trabalhistas</span>
+        </div>
+      </div>
+
+      <!-- VS -->
+      <div style="text-align: center;">
+        <div style="background: linear-gradient(135deg, #0891b2, #16a34a); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto; font-weight: 900; font-size: 1.1rem;">VS</div>
+      </div>
+
+      <!-- SmAIle SmAIle -->
+      <div style="background: rgba(8,145,178,0.08); border: 1px solid rgba(8,145,178,0.4); border-radius: 24px; padding: 40px; box-shadow: 0 0 60px rgba(8,145,178,0.15);">
+        <div style="text-align: center; margin-bottom: 24px;">
+          <span style="font-size: 3rem;">🤖</span>
+          <h3 style="font-family: Clash Display, sans-serif; font-size: 1.4rem; margin-top: 12px; color: #67e8f9;">SmAIle SmAIle</h3>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+            <span style="color: #94a3b8; font-size: 0.9rem;">Mensalidade</span>
+            <span style="color: white; font-weight: 600;">R$397</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+            <span style="color: #94a3b8; font-size: 0.9rem;">INSS + FGTS</span>
+            <span style="color: #4ade80; font-weight: 600;">R$0</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+            <span style="color: #94a3b8; font-size: 0.9rem;">Férias + 13º</span>
+            <span style="color: #4ade80; font-weight: 600;">R$0</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+            <span style="color: #94a3b8; font-size: 0.9rem;">Vale transporte/refeição</span>
+            <span style="color: #4ade80; font-weight: 600;">R$0</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding: 14px 0 0;">
+            <span style="color: #67e8f9; font-weight: 700;">Total mensal real</span>
+            <span style="color: #67e8f9; font-weight: 700; font-size: 1.3rem;">R$397</span>
+          </div>
+        </div>
+        <div style="margin-top: 20px; background: rgba(8,145,178,0.1); border-radius: 12px; padding: 12px; text-align: center;">
+          <span style="color: #67e8f9; font-size: 0.85rem;">✅ Atende 24h por dia, 7 dias<br>✅ Nunca falta ou adoece<br>✅ Zero encargos trabalhistas</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Savings highlight -->
+    <div style="margin-top: 32px; background: linear-gradient(135deg, rgba(22,163,74,0.15), rgba(8,145,178,0.15)); border: 1px solid rgba(22,163,74,0.4); border-radius: 20px; padding: 32px; text-align: center;">
+      <p style="font-size: 1.1rem; color: #94a3b8; margin-bottom: 8px;">Sua clínica economiza todo mês</p>
+      <p style="font-family: Clash Display, sans-serif; font-size: 3rem; font-weight: 700; background: linear-gradient(135deg, #4ade80, #67e8f9); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">R$2.581/mês</p>
+      <p style="color: #94a3b8; font-size: 0.95rem; margin-top: 8px;">Ou <strong style="color: white;">R$30.972 por ano</strong> — com atendimento 24h que nenhuma recepcionista oferece 🦷</p>
+    </div>
+  </div>
+</section>
+
+
+
+<!-- FOMO SECTION -->
+<section style="padding: 80px 5%; position: relative; z-index: 1; background: linear-gradient(180deg, transparent, rgba(239,68,68,0.04), transparent);">
+  <div style="max-width: 900px; margin: 0 auto;">
+
+    <div style="background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25); border-radius: 32px; padding: 60px 48px; text-align: center; position: relative; overflow: hidden;">
+      
+      <!-- Background glow -->
+      <div style="position: absolute; top: -100px; left: 50%; transform: translateX(-50%); width: 400px; height: 400px; background: radial-gradient(circle, rgba(239,68,68,0.08) 0%, transparent 70%); pointer-events: none;"></div>
+
+      <!-- Badge -->
+      <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.4); color: #fca5a5; padding: 8px 20px; border-radius: 50px; font-size: 0.85rem; font-weight: 700; margin-bottom: 32px;">
+        <span style="width: 8px; height: 8px; background: #ef4444; border-radius: 50%; animation: pulse 1.5s infinite;"></span>
+        Atenção, dentista
+      </div>
+
+      <h2 style="font-family: Clash Display, sans-serif; font-size: clamp(2rem, 4vw, 3.2rem); font-weight: 700; line-height: 1.2; margin-bottom: 24px;">
+        Toda profissão está sendo<br>
+        transformada pela IA.<br>
+        <span style="background: linear-gradient(135deg, #ef4444, #f97316); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Com a odontologia não é diferente.</span>
+      </h2>
+
+      <p style="color: #94a3b8; font-size: 1.15rem; line-height: 1.8; max-width: 650px; margin: 0 auto 40px;">
+        Advogado, contador, médico — todos estão usando inteligência artificial para trabalhar menos e atender mais. <strong style="color: #e2e8f0;">O dentista que não se adaptar vai perder pacientes para quem se adaptou.</strong>
+      </p>
+
+      <!-- Stats row -->
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 40px;">
+        <div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 24px;">
+          <div style="font-family: Clash Display, sans-serif; font-size: 2rem; font-weight: 700; color: #fca5a5; margin-bottom: 8px;">+300k</div>
+          <div style="color: #94a3b8; font-size: 0.85rem;">Dentistas no Brasil precisando se adaptar</div>
+        </div>
+        <div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 24px;">
+          <div style="font-family: Clash Display, sans-serif; font-size: 2rem; font-weight: 700; color: #fca5a5; margin-bottom: 8px;">8+</div>
+          <div style="color: #94a3b8; font-size: 0.85rem;">Pacientes perdidos por semana sem atendimento 24h</div>
+        </div>
+        <div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 24px;">
+          <div style="font-family: Clash Display, sans-serif; font-size: 2rem; font-weight: 700; color: #4ade80; margin-bottom: 8px;">24h</div>
+          <div style="color: #94a3b8; font-size: 0.85rem;">Para sua clínica estar no ar com SmAIle</div>
+        </div>
+      </div>
+
+      <!-- Quote -->
+      <div style="background: rgba(255,255,255,0.04); border-left: 4px solid #ef4444; border-radius: 0 16px 16px 0; padding: 24px 28px; text-align: left; margin-bottom: 40px;">
+        <p style="color: #e2e8f0; font-size: 1.05rem; line-height: 1.7; font-style: italic; margin-bottom: 12px;">
+          "Enquanto seu concorrente dorme, sua clínica pode estar trabalhando — agendando consultas, respondendo pacientes e nunca perdendo uma oportunidade."
+        </p>
+        <p style="color: #64748b; font-size: 0.85rem;">— Pedro Victor, Dentista & Criador do SmAIle</p>
+      </div>
+
+      <a href="https://docs.google.com/forms/d/e/1FAIpQLScpp1yOKZRpRmyU5k8AAxK7tOE5EnVtVotz2m-vJHKku5FfrA/viewform" target="_blank" style="display: inline-flex; align-items: center; gap: 10px; background: linear-gradient(135deg, #0891b2, #16a34a); color: white; padding: 16px 36px; border-radius: 50px; font-weight: 700; font-size: 1.05rem; text-decoration: none; box-shadow: 0 20px 50px rgba(8,145,178,0.3);">
+        🦷 Não fique para trás — comece agora
+      </a>
+
+      <p style="color: #475569; font-size: 0.8rem; margin-top: 16px;">Vagas de fundador limitadas • R$397/mês ou a partir de R$277/mês no anual</p>
+
+    </div>
+  </div>
+</section>
+<!-- COMPARATIVO SECTION -->
+<section style="padding: 80px 5%; position: relative; z-index: 1;">
+  <div style="max-width: 1000px; margin: 0 auto;">
+    
+    <div style="text-align: center; margin-bottom: 48px;">
+      <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.4); color: #fca5a5; padding: 8px 20px; border-radius: 50px; font-size: 0.85rem; font-weight: 700; margin-bottom: 24px;">⚠️ Cuidado com chatbots comuns</div>
+      <h2 style="font-family: Clash Display, sans-serif; font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; margin-bottom: 16px;">
+        SmAIle não é um<br>
+        <span style="background: linear-gradient(135deg, #0891b2, #16a34a); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">chatbot comum</span>
+      </h2>
+      <p style="color: #94a3b8; font-size: 1.1rem; max-width: 600px; margin: 0 auto; line-height: 1.7;">A maioria dos "chatbots para dentistas" usa fluxos pré-programados que travam quando o paciente foge do script. O SmAIle usa IA real.</p>
+    </div>
+
+    <!-- Comparison table -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 40px;">
+      
+      <!-- Chatbots comuns -->
+      <div style="background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.25); border-radius: 24px; padding: 36px;">
+        <div style="text-align: center; margin-bottom: 28px;">
+          <div style="font-size: 2.5rem; margin-bottom: 12px;">🤖</div>
+          <h3 style="font-family: Clash Display, sans-serif; font-size: 1.3rem; color: #fca5a5; font-weight: 700;">Chatbots Comuns</h3>
+          <p style="color: #94a3b8; font-size: 0.85rem;">Fluxos pré-programados</p>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; align-items: flex-start; gap: 12px;">
+            <span style="color: #ef4444; font-size: 1.1rem; flex-shrink: 0; margin-top: 2px;">✗</span>
+            <p style="color: #94a3b8; font-size: 0.9rem; line-height: 1.5;">Trava quando paciente faz pergunta fora do script</p>
+          </div>
+          <div style="display: flex; align-items: flex-start; gap: 12px;">
+            <span style="color: #ef4444; font-size: 1.1rem; flex-shrink: 0; margin-top: 2px;">✗</span>
+            <p style="color: #94a3b8; font-size: 0.9rem; line-height: 1.5;">Criado por empresas de tech sem conhecimento de odontologia</p>
+          </div>
+          <div style="display: flex; align-items: flex-start; gap: 12px;">
+            <span style="color: #ef4444; font-size: 1.1rem; flex-shrink: 0; margin-top: 2px;">✗</span>
+            <p style="color: #94a3b8; font-size: 0.9rem; line-height: 1.5;">Respostas robóticas e sem empatia</p>
+          </div>
+          <div style="display: flex; align-items: flex-start; gap: 12px;">
+            <span style="color: #ef4444; font-size: 1.1rem; flex-shrink: 0; margin-top: 2px;">✗</span>
+            <p style="color: #94a3b8; font-size: 0.9rem; line-height: 1.5;">Não entende contexto — cada mensagem é isolada</p>
+          </div>
+          <div style="display: flex; align-items: flex-start; gap: 12px;">
+            <span style="color: #ef4444; font-size: 1.1rem; flex-shrink: 0; margin-top: 2px;">✗</span>
+            <p style="color: #94a3b8; font-size: 0.9rem; line-height: 1.5;">Sem integração com Google Calendar</p>
+          </div>
+          <div style="display: flex; align-items: flex-start; gap: 12px;">
+            <span style="color: #ef4444; font-size: 1.1rem; flex-shrink: 0; margin-top: 2px;">✗</span>
+            <p style="color: #94a3b8; font-size: 0.9rem; line-height: 1.5;">Paciente percebe que é robô — perde confiança</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- SmAIle -->
+      <div style="background: rgba(8,145,178,0.08); border: 2px solid rgba(8,145,178,0.4); border-radius: 24px; padding: 36px; box-shadow: 0 0 60px rgba(8,145,178,0.1);">
+        <div style="text-align: center; margin-bottom: 28px;">
+          <div style="font-size: 2.5rem; margin-bottom: 12px;">🦷</div>
+          <h3 style="font-family: Clash Display, sans-serif; font-size: 1.3rem; color: #67e8f9; font-weight: 700;">SmAIle</h3>
+          <p style="color: #94a3b8; font-size: 0.85rem;">IA real • Criado por dentista</p>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; align-items: flex-start; gap: 12px;">
+            <span style="color: #4ade80; font-size: 1.1rem; flex-shrink: 0; margin-top: 2px;">✓</span>
+            <p style="color: #94a3b8; font-size: 0.9rem; line-height: 1.5;">Responde qualquer pergunta naturalmente — nunca trava</p>
+          </div>
+          <div style="display: flex; align-items: flex-start; gap: 12px;">
+            <span style="color: #4ade80; font-size: 1.1rem; flex-shrink: 0; margin-top: 2px;">✓</span>
+            <p style="color: #94a3b8; font-size: 0.9rem; line-height: 1.5;"><strong style="color: white;">Criado por dentista</strong> — entende o dia a dia da clínica por dentro</p>
+          </div>
+          <div style="display: flex; align-items: flex-start; gap: 12px;">
+            <span style="color: #4ade80; font-size: 1.1rem; flex-shrink: 0; margin-top: 2px;">✓</span>
+            <p style="color: #94a3b8; font-size: 0.9rem; line-height: 1.5;">Empática e acolhedora — paciente sente que fala com pessoa real</p>
+          </div>
+          <div style="display: flex; align-items: flex-start; gap: 12px;">
+            <span style="color: #4ade80; font-size: 1.1rem; flex-shrink: 0; margin-top: 2px;">✓</span>
+            <p style="color: #94a3b8; font-size: 0.9rem; line-height: 1.5;">Memória da conversa — lembra o contexto de cada paciente</p>
+          </div>
+          <div style="display: flex; align-items: flex-start; gap: 12px;">
+            <span style="color: #4ade80; font-size: 1.1rem; flex-shrink: 0; margin-top: 2px;">✓</span>
+            <p style="color: #94a3b8; font-size: 0.9rem; line-height: 1.5;">Google Calendar integrado — zero duplo agendamento</p>
+          </div>
+          <div style="display: flex; align-items: flex-start; gap: 12px;">
+            <span style="color: #4ade80; font-size: 1.1rem; flex-shrink: 0; margin-top: 2px;">✓</span>
+            <p style="color: #94a3b8; font-size: 0.9rem; line-height: 1.5;">Paciente confia — experiência natural e humanizada</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom highlight -->
+    <div style="background: linear-gradient(135deg, rgba(8,145,178,0.12), rgba(22,163,74,0.12)); border: 1px solid rgba(8,145,178,0.3); border-radius: 20px; padding: 32px; text-align: center;">
+      <p style="font-size: 1.2rem; color: white; font-weight: 600; margin-bottom: 8px;">💡 O diferencial que nenhum concorrente tem</p>
+      <p style="color: #94a3b8; font-size: 1rem; line-height: 1.7; max-width: 700px; margin: 0 auto;">O SmAIle foi criado por um dentista que sentiu o problema na pele. Não é uma empresa de tech tentando entender odontologia — é um colega de profissão que construiu a solução que sempre quis ter.</p>
+    </div>
+
+  </div>
+</section>
+<section class="pricing" id="pricing">
+  <div class="section-label">Planos</div>
+  <h2 class="section-title">Investimento que se paga</h2>
+  <p class="section-sub">Menos que 1 dia de recepcionista. Trabalha 30 dias por mês, sem faltar.</p>
+
+  <div class="pricing-grid" style="grid-template-columns: repeat(4,1fr); max-width:1100px;">
+    <div class="pricing-card">
+      <div class="pricing-plan">Mensal</div>
+      <div class="pricing-price"><sup>R$</sup>397</div>
+      <div class="pricing-period">por mês • cobrança recorrente</div>
+      <div class="pricing-economy">💳 Cartão ou Pix</div>
+      <ul class="pricing-features">
+        <li>SmAIle no WhatsApp 24h</li>
+        <li>Agendamento automático</li>
+        <li>Google Calendar incluso</li>
+        <li>Notificação para dentista</li>
+        <li>Suporte incluso</li>
+      </ul>
+      <a href="https://docs.google.com/forms/d/e/1FAIpQLScpp1yOKZRpRmyU5k8AAxK7tOE5EnVtVotz2m-vJHKku5FfrA/viewform" target="_blank" class="pricing-btn" style="background: #e11d48; color: white; display:flex; align-items:center; justify-content:center; gap:8px; border-radius:50px; padding:14px; font-weight:700; text-decoration:none; transition: all 0.3s;">🚀 Contratar agora</a>
+    </div>
+
+    <div class="pricing-card">
+      <div class="pricing-plan">Trimestral</div>
+      <div class="pricing-price"><sup>R$</sup>357</div>
+      <div class="pricing-period">por mês • R$1.071 à vista</div>
+      <div class="pricing-economy">💰 Economize R$120 • Parcela em até 3x</div>
+      <ul class="pricing-features">
+        <li>Tudo do plano mensal</li>
+        <li>Economia de R$120</li>
+        <li>Google Calendar incluso</li>
+        <li>Suporte prioritário</li>
+        <li>Parcela em até 3x no cartão</li>
+      </ul>
+      <a href="https://docs.google.com/forms/d/e/1FAIpQLScpp1yOKZRpRmyU5k8AAxK7tOE5EnVtVotz2m-vJHKku5FfrA/viewform" target="_blank" class="pricing-btn" style="background: #e11d48; color: white; display:flex; align-items:center; justify-content:center; gap:8px; border-radius:50px; padding:14px; font-weight:700; text-decoration:none; transition: all 0.3s;">🚀 Contratar agora</a>
+    </div>
+
+    <div class="pricing-card">
+      <div class="pricing-plan">Semestral</div>
+      <div class="pricing-price"><sup>R$</sup>317</div>
+      <div class="pricing-period">por mês • R$1.902 à vista</div>
+      <div class="pricing-economy">💰 Economize R$480 • Parcela em até 6x</div>
+      <ul class="pricing-features">
+        <li>Tudo do plano mensal</li>
+        <li>Economia de R$480</li>
+        <li>Google Calendar incluso</li>
+        <li>Suporte prioritário</li>
+        <li>Parcela em até 6x no cartão</li>
+      </ul>
+      <a href="https://docs.google.com/forms/d/e/1FAIpQLScpp1yOKZRpRmyU5k8AAxK7tOE5EnVtVotz2m-vJHKku5FfrA/viewform" target="_blank" class="pricing-btn" style="background: #e11d48; color: white; display:flex; align-items:center; justify-content:center; gap:8px; border-radius:50px; padding:14px; font-weight:700; text-decoration:none; transition: all 0.3s;">🚀 Contratar agora</a>
+    </div>
+
+    <div class="pricing-card featured">
+      <div class="popular-badge">⭐ Mais popular</div>
+      <div class="pricing-plan">Anual</div>
+      <div class="pricing-price"><sup>R$</sup>277</div>
+      <div class="pricing-period">por mês • R$3.324 à vista</div>
+      <div class="pricing-economy">💰 Economize R$1.440 • Parcela em até 12x</div>
+      <ul class="pricing-features">
+        <li>Tudo do plano mensal</li>
+        <li>Economia de R$1.440/ano</li>
+        <li>Google Calendar incluso</li>
+        <li>Suporte VIP</li>
+        <li>Parcela em até 12x no cartão</li>
+      </ul>
+      <a href="https://docs.google.com/forms/d/e/1FAIpQLScpp1yOKZRpRmyU5k8AAxK7tOE5EnVtVotz2m-vJHKku5FfrA/viewform" target="_blank" class="pricing-btn" style="background: #e11d48; color: white; display:flex; align-items:center; justify-content:center; gap:8px; border-radius:50px; padding:14px; font-weight:700; font-size:1.05rem; text-decoration:none; box-shadow: 0 10px 30px rgba(225,29,72,0.4); transition: all 0.3s;">🚀 Contratar agora</a>
+    </div>
+  </div>
+  <p class="pricing-note">🔒 Preço de fundador — vagas limitadas. Após o lançamento, o mensal sobe para R$497.</p></section>
+
+<!-- TESTIMONIALS -->
+<section class="testimonials">
+  <div class="section-label">Depoimentos</div>
+  <h2 class="section-title">O que dizem nossos clientes</h2>
+  <p class="section-sub">Dentistas que já usam a SmAIle na clínica.</p>
+
+  <div class="testimonials-grid">
+    <div class="testimonial-card">
+      <div class="testimonial-stars">★★★★★</div>
+      <p class="testimonial-text">"Antes eu perdia paciente todo fim de semana. Agora a SmAIle cuida de tudo. Já recuperei o investimento na primeira semana."</p>
+      <div class="testimonial-author">
+        <div class="author-avatar">👩‍⚕️</div>
+        <div>
+          <div class="author-name">Dra. Ana Lima</div>
+          <div class="author-role">Clínica Sorriso Dourado • RJ</div>
+        </div>
+      </div>
+    </div>
+    <div class="testimonial-card">
+      <div class="testimonial-stars">★★★★★</div>
+      <p class="testimonial-text">"As faltas reduziram muito depois das confirmações automáticas. Minha agenda nunca esteve tão organizada."</p>
+      <div class="testimonial-author">
+        <div class="author-avatar">👨‍⚕️</div>
+        <div>
+          <div class="author-name">Dr. Carlos Mendes</div>
+          <div class="author-role">OdontoSaúde • SP</div>
+        </div>
+      </div>
+    </div>
+    <div class="testimonial-card">
+      <div class="testimonial-stars">★★★★★</div>
+      <p class="testimonial-text">"Trabalho sozinha sem recepcionista. A SmAIle mudou minha vida — atendo mais e me preocupo menos com o WhatsApp."</p>
+      <div class="testimonial-author">
+        <div class="author-avatar">👩‍⚕️</div>
+        <div>
+          <div class="author-name">Dra. Fernanda Costa</div>
+          <div class="author-role">Clínica Dente Feliz • BH</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq">
+  <div class="section-label">Dúvidas</div>
+  <h2 class="section-title">Perguntas frequentes</h2>
+
+  <div class="faq-list">
+    <div class="faq-item">
+      <div class="faq-question">O paciente vai saber que é uma IA?</div>
+      <div class="faq-answer">A SmAIle é desenvolvida para ser natural e empática. A maioria dos pacientes não percebe. Se preferir, pode usar um nome humano como Ana ou Julia.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-question">Preciso de um número novo de WhatsApp?</div>
+      <div class="faq-answer">Recomendamos um número exclusivo para a SmAIle — pode ser um chip simples de qualquer operadora. Isso garante que as mensagens da clínica não se misturem com as pessoais.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-question">Em quanto tempo fica no ar?</div>
+      <div class="faq-answer">Após preencher o formulário de cadastro, sua SmAIle fica no ar em até 24 horas úteis. Cuidamos de toda a configuração técnica.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-question">E se eu quiser cancelar?</div>
+      <div class="faq-answer">No plano mensal você pode cancelar a qualquer momento antes da próxima cobrança. No plano anual, o valor é pago à vista e não há reembolso parcial.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-question">A SmAIle dá conselho clínico?</div>
+      <div class="faq-answer">Não! A SmAIle é treinada para nunca dar diagnósticos ou conselhos clínicos. Quando o paciente relata sintomas, ela acolhe e agenda — sempre priorizando a consulta.</div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA FINAL -->
+<section class="cta-final" id="cta">
+  <div class="cta-box">
+    <div class="vagas-badge">⚠️ Apenas 10 vagas no preço de fundador</div>
+    <h2>Comece hoje mesmo</h2>
+    <p>Clique no botão abaixo e fale com a SmAIle agora — ela vai te atender e mostrar como funciona na prática.</p>
+    <a href="https://wa.me/5521999999999?text=Oi%20SmAIle!%20Vi%20o%20site%20e%20quero%20saber%20mais" class="btn-primary" style="display:inline-flex; margin: 0 auto;">
+      🦷 Falar com a SmAIle agora
+    </a>
+    <p style="margin-top:20px; color: var(--text); font-size:0.85rem;">Sem compromisso • Resposta em segundos • Grátis para testar</p>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">
+    <img src="https://raw.githubusercontent.com/pedrovcnunes-jpg/Odontozap-demo/master/smaile-logo-nobg.png" alt="SmAIle">
+    <span style="font-family: Orbitron, sans-serif; font-weight: 700; font-size: 1.2rem; letter-spacing: 2px;"><span style="color: #67e8f9;">Sm</span><span style="color: #16a34a;">AI</span><span style="color: #67e8f9;">le</span></span>
+  </div>
+  <p>© 2025 SmAIle. Recepcionista Virtual com IA para Clínicas Odontológicas 🦷</p>
+</footer>
+
+<script>
+// FAQ Toggle
+document.querySelectorAll('.faq-question').forEach(q => {
+  q.addEventListener('click', () => {
+    const item = q.parentElement;
+    const isOpen = item.classList.contains('open');
+    document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+    if (!isOpen) item.classList.add('open');
+  });
+});
+
+// Auto scroll chat
+const chatBody = document.getElementById('chatBody');
+if (chatBody) {
+  // Start at top
+  chatBody.scrollTop = 0;
+  
+  // Auto scroll as messages appear
+  let scrollInterval;
+  const startAutoScroll = () => {
+    scrollInterval = setInterval(() => {
+      if (chatBody.scrollTop + chatBody.clientHeight >= chatBody.scrollHeight - 10) {
+        // Reached bottom, scroll back to top after pause
+        setTimeout(() => {
+          chatBody.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 2000);
+      } else {
+        chatBody.scrollBy({ top: 1.5, behavior: 'auto' });
+      }
+    }, 30);
+  };
+  
+  // Start after 2s delay
+  setTimeout(startAutoScroll, 2000);
+  
+  // Pause on hover
+  chatBody.addEventListener('mouseenter', () => clearInterval(scrollInterval));
+  chatBody.addEventListener('mouseleave', () => startAutoScroll());
+}
+
+// Smooth scroll
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) target.scrollIntoView({ behavior: 'smooth' });
+  });
+});
+
+// Scroll animations
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.style.opacity = '1';
+      e.target.style.transform = 'translateY(0)';
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.feature-card, .pricing-card, .testimonial-card, .faq-item').forEach(el => {
+  el.style.opacity = '0';
+  el.style.transform = 'translateY(20px)';
+  el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+  observer.observe(el);
+});
+</script>
+
+</body>
+</html>
