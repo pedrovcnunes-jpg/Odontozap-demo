@@ -2,6 +2,7 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 const Anthropic = require("@anthropic-ai/sdk");
+const Groq = require("groq-sdk");
 require("dotenv").config();
 
 const {
@@ -12,12 +13,14 @@ const {
   ZAPI_TOKEN,
   ZAPI_CLIENT_TOKEN,
   OWNER_PHONE,
+  GROQ_API_KEY,
 } = process.env;
 
 if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY ausente");
 if (!ZAPI_INSTANCE_ID || !ZAPI_TOKEN) throw new Error("Z-API creds ausentes");
 
 const claude = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
+const groq = GROQ_API_KEY ? new Groq({ apiKey: GROQ_API_KEY }) : null;
 const sessions = new Map();
 
 const HOT_LEAD_PATTERNS = [
@@ -76,6 +79,20 @@ const SYSTEM_PROMPT = loadPrompt();
 
 const ZAPI_BASE = `https://api.z-api.io/instances/${ZAPI_INSTANCE_ID}/token/${ZAPI_TOKEN}`;
 
+async function transcribeAudio(audioUrl) {
+  if (!groq) throw new Error("GROQ_API_KEY não configurada");
+  const resp = await fetch(audioUrl, { signal: AbortSignal.timeout(30_000) });
+  if (!resp.ok) throw new Error(`Download de áudio falhou: ${resp.status}`);
+  const buffer = Buffer.from(await resp.arrayBuffer());
+  const file = new File([buffer], "audio.ogg", { type: "audio/ogg" });
+  const transcription = await groq.audio.transcriptions.create({
+    file,
+    model: "whisper-large-v3-turbo",
+    language: "pt",
+  });
+  return transcription.text;
+}
+
 async function sendText(phone, message) {
   const headers = { "Content-Type": "application/json" };
   if (ZAPI_CLIENT_TOKEN) headers["Client-Token"] = ZAPI_CLIENT_TOKEN;
@@ -119,8 +136,31 @@ app.post("/webhook", async (req, res) => {
     if (body.isGroup === true) return;
 
     const phone = String(body.phone || "").replace(/\D/g, "");
-    const text = body.text?.message || body.message || body.body || "";
-    if (!phone || !text) return;
+    if (!phone) return;
+
+    const messageType = body.type || body.messageType || "";
+    const isAudio = /audio|ptt/i.test(messageType);
+
+    let text;
+    if (isAudio) {
+      const audioUrl =
+        body.audio?.audioUrl ||
+        body.audio?.url ||
+        (typeof body.audio === "string" ? body.audio : null);
+      if (!audioUrl) return;
+      try {
+        text = await transcribeAudio(audioUrl);
+        console.log(`🎙️ ${phone} transcrito: ${text}`);
+      } catch (err) {
+        console.error("❌ Transcrição falhou:", err.message);
+        await sendText(phone, "Desculpe, não consegui ouvir seu áudio 😊 Pode digitar sua mensagem?");
+        return;
+      }
+    } else {
+      text = body.text?.message || body.message || body.body || "";
+    }
+
+    if (!text) return;
 
     console.log(`📩 ${phone}: ${text}`);
 
