@@ -93,10 +93,7 @@ async function transcribeAudio(audioUrl) {
 }
 
 function formatPhone(raw) {
-  let n = String(raw).replace(/\D/g, "");
-  if (n.length > 13) n = n.slice(-13);
-  if (!n.startsWith("55")) n = "55" + n;
-  return n;
+  return String(raw).replace(/\D/g, "");
 }
 
 async function sendText(phone, message) {
