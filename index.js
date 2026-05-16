@@ -92,13 +92,21 @@ async function transcribeAudio(audioUrl) {
   return transcription.text;
 }
 
+function formatPhone(raw) {
+  let n = String(raw).replace(/\D/g, "");
+  if (n.length > 13) n = n.slice(-13);
+  if (!n.startsWith("55")) n = "55" + n;
+  return n;
+}
+
 async function sendText(phone, message) {
+  const number = formatPhone(phone);
   const resp = await fetch(
     `${EVOLUTION_API_URL}/message/sendText/${EVOLUTION_INSTANCE}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json", apikey: EVOLUTION_API_KEY },
-      body: JSON.stringify({ number: phone, textMessage: { text: message } }),
+      body: JSON.stringify({ number, textMessage: { text: message } }),
       signal: AbortSignal.timeout(30_000),
     }
   );
