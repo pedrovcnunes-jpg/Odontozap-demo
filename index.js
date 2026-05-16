@@ -132,6 +132,8 @@ app.post("/webhook", async (req, res) => {
   res.sendStatus(200);
   try {
     const data = (req.body || {}).data || {};
+    console.log("DEBUG webhook data:", JSON.stringify(data, null, 2));
+
     const key = data.key || {};
 
     if (key.fromMe === true) return;
@@ -139,7 +141,14 @@ app.post("/webhook", async (req, res) => {
     const remoteJid = key.remoteJid || "";
     if (remoteJid.includes("@g.us")) return;
 
-    const phone = remoteJid;
+    let phone = remoteJid;
+    if (remoteJid.endsWith("@lid")) {
+      phone = key.participant || "";
+      if (!phone) {
+        console.log("⚠️ @lid sem participant — ver DEBUG acima para campos disponíveis");
+        return;
+      }
+    }
     if (!phone) return;
 
     const msg = data.message || {};
