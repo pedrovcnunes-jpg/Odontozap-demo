@@ -9,15 +9,16 @@ const {
   PORT = 3000,
   ANTHROPIC_API_KEY,
   ANTHROPIC_MODEL = "claude-sonnet-4-6",
-  ZAPI_INSTANCE_ID,
-  ZAPI_TOKEN,
-  ZAPI_CLIENT_TOKEN,
+  EVOLUTION_API_URL,
+  EVOLUTION_API_KEY,
+  EVOLUTION_INSTANCE,
   OWNER_PHONE,
   GROQ_API_KEY,
 } = process.env;
 
 if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY ausente");
-if (!ZAPI_INSTANCE_ID || !ZAPI_TOKEN) throw new Error("Z-API creds ausentes");
+if (!EVOLUTION_API_URL || !EVOLUTION_API_KEY || !EVOLUTION_INSTANCE)
+  throw new Error("Evolution API creds ausentes (EVOLUTION_API_URL, EVOLUTION_API_KEY, EVOLUTION_INSTANCE)");
 
 const claude = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
 const groq = GROQ_API_KEY ? new Groq({ apiKey: GROQ_API_KEY }) : null;
@@ -77,8 +78,6 @@ function loadPrompt() {
 }
 const SYSTEM_PROMPT = loadPrompt();
 
-const ZAPI_BASE = `https://api.z-api.io/instances/${ZAPI_INSTANCE_ID}/token/${ZAPI_TOKEN}`;
-
 async function transcribeAudio(audioUrl) {
   if (!groq) throw new Error("GROQ_API_KEY não configurada");
   const resp = await fetch(audioUrl, { signal: AbortSignal.timeout(30_000) });
@@ -94,17 +93,17 @@ async function transcribeAudio(audioUrl) {
 }
 
 async function sendText(phone, message) {
-  const headers = { "Content-Type": "application/json" };
-  if (ZAPI_CLIENT_TOKEN) headers["Client-Token"] = ZAPI_CLIENT_TOKEN;
-
-  const resp = await fetch(`${ZAPI_BASE}/send-text`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ phone, message }),
-    signal: AbortSignal.timeout(30_000),
-  });
+  const resp = await fetch(
+    `${EVOLUTION_API_URL}/message/sendText/${EVOLUTION_INSTANCE}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: EVOLUTION_API_KEY },
+      body: JSON.stringify({ number: phone, text: message }),
+      signal: AbortSignal.timeout(30_000),
+    }
+  );
   const txt = await resp.text();
-  if (!resp.ok) throw new Error(`Z-API ${resp.status}: ${txt.slice(0, 300)}`);
+  if (!resp.ok) throw new Error(`Evolution API ${resp.status}: ${txt.slice(0, 300)}`);
   return JSON.parse(txt);
 }
 
@@ -131,22 +130,24 @@ app.get("/health", (_req, res) =>
 app.post("/webhook", async (req, res) => {
   res.sendStatus(200);
   try {
-    const body = req.body || {};
-    if (body.fromMe === true) return;
-    if (body.isGroup === true) return;
+    const data = (req.body || {}).data || {};
+    const key = data.key || {};
 
-    const phone = String(body.phone || "").replace(/\D/g, "");
+    if (key.fromMe === true) return;
+
+    const remoteJid = key.remoteJid || "";
+    if (remoteJid.includes("@g.us")) return;
+
+    const phone = remoteJid.replace("@s.whatsapp.net", "").replace(/\D/g, "");
     if (!phone) return;
 
-    const messageType = body.type || body.messageType || "";
-    const isAudio = /audio|ptt/i.test(messageType);
+    const msg = data.message || {};
+    const messageType = Object.keys(msg)[0] || "";
+    const isAudio = /audioMessage|pttMessage/i.test(messageType);
 
     let text;
     if (isAudio) {
-      const audioUrl =
-        body.audio?.audioUrl ||
-        body.audio?.url ||
-        (typeof body.audio === "string" ? body.audio : null);
+      const audioUrl = msg[messageType]?.url || null;
       if (!audioUrl) return;
       try {
         text = await transcribeAudio(audioUrl);
@@ -157,7 +158,7 @@ app.post("/webhook", async (req, res) => {
         return;
       }
     } else {
-      text = body.text?.message || body.message || body.body || "";
+      text = msg.conversation || msg.extendedTextMessage?.text || "";
     }
 
     if (!text) return;
