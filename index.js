@@ -139,7 +139,7 @@ app.post("/webhook", async (req, res) => {
     const remoteJid = key.remoteJid || "";
     if (remoteJid.includes("@g.us")) return;
 
-    const phone = remoteJid.replace("@s.whatsapp.net", "");
+    const phone = remoteJid;
     if (!phone) return;
 
     const msg = data.message || {};
