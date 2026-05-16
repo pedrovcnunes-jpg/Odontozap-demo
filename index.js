@@ -141,14 +141,7 @@ app.post("/webhook", async (req, res) => {
     const remoteJid = key.remoteJid || "";
     if (remoteJid.includes("@g.us")) return;
 
-    let phone = remoteJid;
-    if (remoteJid.endsWith("@lid")) {
-      phone = key.participant || "";
-      if (!phone) {
-        console.log("⚠️ @lid sem participant — ver DEBUG acima para campos disponíveis");
-        return;
-      }
-    }
+    const phone = remoteJid;
     if (!phone) return;
 
     const msg = data.message || {};
