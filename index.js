@@ -92,12 +92,8 @@ async function transcribeAudio(audioUrl) {
   return transcription.text;
 }
 
-function formatPhone(raw) {
-  return String(raw).replace(/\D/g, "");
-}
-
 async function sendText(phone, message) {
-  const number = formatPhone(phone);
+  const number = phone;
   const resp = await fetch(
     `${EVOLUTION_API_URL}/message/sendText/${EVOLUTION_INSTANCE}`,
     {
@@ -143,7 +139,7 @@ app.post("/webhook", async (req, res) => {
     const remoteJid = key.remoteJid || "";
     if (remoteJid.includes("@g.us")) return;
 
-    const phone = remoteJid.replace("@s.whatsapp.net", "").replace(/\D/g, "");
+    const phone = remoteJid.replace("@s.whatsapp.net", "");
     if (!phone) return;
 
     const msg = data.message || {};
