@@ -98,7 +98,7 @@ async function sendText(phone, message) {
     {
       method: "POST",
       headers: { "Content-Type": "application/json", apikey: EVOLUTION_API_KEY },
-      body: JSON.stringify({ number: phone, text: message }),
+      body: JSON.stringify({ number: phone, textMessage: { text: message } }),
       signal: AbortSignal.timeout(30_000),
     }
   );
