@@ -12,6 +12,8 @@ const {
   ANTHROPIC_MODEL = "claude-sonnet-4-6",
   OWNER_PHONE,
   GROQ_API_KEY,
+  WEBHOOK_VERIFY_TOKEN,
+  WHATSAPP_TOKEN,
 } = process.env;
 
 if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY ausente");
@@ -139,7 +141,10 @@ async function handleIncomingMessage(msg) {
   }
 
   if (!text) return;
+  await processMessage(jid, text);
+}
 
+async function processMessage(jid, text) {
   console.log(`📩 ${jid}: ${text}`);
 
   if (!sessions.has(jid)) sessions.set(jid, { messages: [] });
@@ -214,6 +219,66 @@ app.use(express.json({ limit: "2mb" }));
 app.get("/health", (_req, res) =>
   res.json({ status: "ok", sessions: sessions.size, model: ANTHROPIC_MODEL, connected: !!waSocket })
 );
+
+app.get("/webhook", (req, res) => {
+  const mode = req.query["hub.mode"];
+  const token = req.query["hub.verify_token"];
+  const challenge = req.query["hub.challenge"];
+  if (mode === "subscribe" && token === WEBHOOK_VERIFY_TOKEN)
+    return res.status(200).send(challenge);
+  res.sendStatus(403);
+});
+
+app.post("/webhook", async (req, res) => {
+  res.sendStatus(200);
+  try {
+    const entry = req.body?.entry?.[0];
+    const value = entry?.changes?.[0]?.value;
+    const messages = value?.messages;
+    if (!messages?.length) return;
+
+    const message = messages[0];
+    const phone = message.from;
+    if (!phone) return;
+
+    const jid = `${phone}@s.whatsapp.net`;
+    const isAudio = message.type === "audio";
+
+    let text;
+    if (isAudio) {
+      if (!WHATSAPP_TOKEN) {
+        await handleMetaReply(jid, "Desculpe, não consigo ouvir áudios agora 😊 Pode digitar sua mensagem?");
+        return;
+      }
+      try {
+        const mediaId = message.audio.id;
+        const metaResp = await fetch(
+          `https://graph.facebook.com/v19.0/${mediaId}`,
+          { headers: { Authorization: `Bearer ${WHATSAPP_TOKEN}` } }
+        );
+        const { url } = await metaResp.json();
+        const audioResp = await fetch(url, {
+          headers: { Authorization: `Bearer ${WHATSAPP_TOKEN}` },
+          signal: AbortSignal.timeout(30_000),
+        });
+        const buffer = Buffer.from(await audioResp.arrayBuffer());
+        text = await transcribeAudio(buffer);
+        console.log(`🎙️ ${jid} transcrito: ${text}`);
+      } catch (err) {
+        console.error("❌ Transcrição Meta falhou:", err.message);
+        await handleMetaReply(jid, "Desculpe, não consegui ouvir seu áudio 😊 Pode digitar sua mensagem?");
+        return;
+      }
+    } else {
+      text = message.text?.body || "";
+    }
+
+    if (!text) return;
+    await processMessage(jid, text);
+  } catch (err) {
+    console.error("❌", err.message);
+  }
+});
 
 app.get("/qrcode", (_req, res) => {
   if (!currentQR)
