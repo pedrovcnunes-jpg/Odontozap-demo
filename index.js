@@ -1,7 +1,6 @@
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
-const QRCode = require("qrcode");
 const Anthropic = require("@anthropic-ai/sdk");
 const Groq = require("groq-sdk");
 require("dotenv").config();
@@ -13,7 +12,7 @@ const {
   OWNER_PHONE,
   GROQ_API_KEY,
   WEBHOOK_VERIFY_TOKEN,
-  WHATSAPP_TOKEN,
+  ZAPI_CLIENT_TOKEN,
 } = process.env;
 
 if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY ausente");
@@ -59,42 +58,46 @@ function loadPrompt() {
 }
 const SYSTEM_PROMPT = loadPrompt();
 
-let waSocket = null;
-let currentQR = null;
+const ZAPI_SEND_URL =
+  "https://api.z-api.io/instances/3F353D9E4AC9F1903D9EF6B0730C054E/token/C0A971CEFA0B4EF0790313FA/send-text";
 
-function toJid(phone) {
-  if (!phone) return null;
-  const num = String(phone).replace(/\D/g, "");
-  return num.includes("@") ? phone : `${num}@s.whatsapp.net`;
+async function sendText(phone, message) {
+  const headers = { "Content-Type": "application/json" };
+  if (ZAPI_CLIENT_TOKEN) headers["Client-Token"] = ZAPI_CLIENT_TOKEN;
+  const resp = await fetch(ZAPI_SEND_URL, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ phone, message }),
+    signal: AbortSignal.timeout(30_000),
+  });
+  const txt = await resp.text();
+  if (!resp.ok) throw new Error(`Z-API ${resp.status}: ${txt.slice(0, 300)}`);
+  return JSON.parse(txt);
 }
 
-async function sendText(jid, message) {
-  if (!waSocket) throw new Error("WhatsApp não conectado");
-  await waSocket.sendMessage(jid, { text: message });
-}
-
-async function notifyOwner(jid, lastMessage) {
+async function notifyOwner(phone, lastMessage) {
   if (!OWNER_PHONE) return;
-  const ownerJid = toJid(OWNER_PHONE);
-  if (!ownerJid) return;
   const now = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
   const msg =
     `🔥 *Lead quente no SmAIle!*\n\n` +
-    `👤 Número: ${jid}\n` +
+    `👤 Número: ${phone}\n` +
     `💬 Último interesse: ${lastMessage.slice(0, 200)}\n` +
     `⏰ Agora: ${now}\n\n` +
     `Entre na conversa agora! 🚀`;
   try {
-    await sendText(ownerJid, msg);
-    console.log(`🔥 Owner notificado sobre lead quente: ${jid}`);
+    await sendText(OWNER_PHONE, msg);
+    console.log(`🔥 Owner notificado sobre lead quente: ${phone}`);
   } catch (err) {
     console.error("❌ Falha ao notificar owner:", err.message);
   }
 }
 
-async function transcribeAudio(audioBuffer) {
+async function transcribeAudio(audioUrl) {
   if (!groq) throw new Error("GROQ_API_KEY não configurada");
-  const file = new File([audioBuffer], "audio.ogg", { type: "audio/ogg" });
+  const resp = await fetch(audioUrl, { signal: AbortSignal.timeout(30_000) });
+  if (!resp.ok) throw new Error(`Download de áudio falhou: ${resp.status}`);
+  const buffer = Buffer.from(await resp.arrayBuffer());
+  const file = new File([buffer], "audio.ogg", { type: "audio/ogg" });
   const transcription = await groq.audio.transcriptions.create({
     file,
     model: "whisper-large-v3-turbo",
@@ -116,108 +119,28 @@ async function getReply(session, userMessage) {
   return reply;
 }
 
-async function handleIncomingMessage(msg) {
-  if (msg.key.fromMe) return;
-  const jid = msg.key.remoteJid || "";
-  if (jid.endsWith("@g.us")) return;
+async function processMessage(phone, text) {
+  console.log(`📩 ${phone}: ${text}`);
 
-  const msgContent = msg.message || {};
-  const isAudio = !!(msgContent.audioMessage || msgContent.pttMessage);
-
-  let text;
-  if (isAudio) {
-    const { downloadMediaMessage } = await import("@whiskeysockets/baileys");
-    try {
-      const buffer = await downloadMediaMessage(msg, "buffer", {});
-      text = await transcribeAudio(buffer);
-      console.log(`🎙️ ${jid} transcrito: ${text}`);
-    } catch (err) {
-      console.error("❌ Transcrição falhou:", err.message);
-      await sendText(jid, "Desculpe, não consegui ouvir seu áudio 😊 Pode digitar sua mensagem?");
-      return;
-    }
-  } else {
-    text = msgContent.conversation || msgContent.extendedTextMessage?.text || "";
-  }
-
-  if (!text) return;
-  await processMessage(jid, text);
-}
-
-async function processMessage(jid, text) {
-  console.log(`📩 ${jid}: ${text}`);
-
-  if (!sessions.has(jid)) sessions.set(jid, { messages: [] });
-  const session = sessions.get(jid);
+  if (!sessions.has(phone)) sessions.set(phone, { messages: [] });
+  const session = sessions.get(phone);
 
   const hot = isHotLead(session, text);
   const reply = await getReply(session, text);
-  console.log(`💬 ${jid}: ${reply}`);
-  await sendText(jid, reply);
-  console.log(`✅ ${jid} entregue`);
+  console.log(`💬 ${phone}: ${reply}`);
+  await sendText(phone, reply);
+  console.log(`✅ ${phone} entregue`);
   if (hot && !session.ownerNotified) {
     session.ownerNotified = true;
-    await notifyOwner(jid, text);
+    await notifyOwner(phone, text);
   }
-}
-
-async function startBaileys() {
-  const {
-    default: makeWASocket,
-    useMultiFileAuthState,
-    DisconnectReason,
-    Browsers,
-  } = await import("@whiskeysockets/baileys");
-
-  const { state, saveCreds } = await useMultiFileAuthState("auth_info_baileys");
-
-  const sock = makeWASocket({
-    auth: state,
-    browser: Browsers.ubuntu("Chrome"),
-    printQRInTerminal: true,
-  });
-
-  waSocket = sock;
-  sock.ev.on("creds.update", saveCreds);
-
-  sock.ev.on("connection.update", async ({ connection, lastDisconnect, qr }) => {
-    if (qr) {
-      currentQR = await QRCode.toDataURL(qr);
-      console.log("📱 QR Code disponível em /qrcode");
-    }
-    if (connection === "close") {
-      currentQR = null;
-      const code = lastDisconnect?.error?.output?.statusCode;
-      if (code !== DisconnectReason.loggedOut) {
-        console.log("🔄 Reconectando...");
-        startBaileys();
-      } else {
-        console.log("❌ Deslogado. Escaneie o QR novamente em /qrcode");
-        startBaileys();
-      }
-    } else if (connection === "open") {
-      currentQR = null;
-      console.log("✅ WhatsApp conectado");
-    }
-  });
-
-  sock.ev.on("messages.upsert", async ({ messages, type }) => {
-    if (type !== "notify") return;
-    for (const msg of messages) {
-      try {
-        await handleIncomingMessage(msg);
-      } catch (err) {
-        console.error("❌", err.message);
-      }
-    }
-  });
 }
 
 const app = express();
 app.use(express.json({ limit: "2mb" }));
 
 app.get("/health", (_req, res) =>
-  res.json({ status: "ok", sessions: sessions.size, model: ANTHROPIC_MODEL, connected: !!waSocket })
+  res.json({ status: "ok", sessions: sessions.size, model: ANTHROPIC_MODEL })
 );
 
 app.get("/webhook", (req, res) => {
@@ -232,61 +155,40 @@ app.get("/webhook", (req, res) => {
 app.post("/webhook", async (req, res) => {
   res.sendStatus(200);
   try {
-    const entry = req.body?.entry?.[0];
-    const value = entry?.changes?.[0]?.value;
-    const messages = value?.messages;
-    if (!messages?.length) return;
+    const body = req.body || {};
+    if (body.fromMe === true) return;
+    if (body.isGroup === true) return;
 
-    const message = messages[0];
-    const phone = message.from;
+    const phone = String(body.phone || "").replace(/\D/g, "");
     if (!phone) return;
 
-    const jid = `${phone}@s.whatsapp.net`;
-    const isAudio = message.type === "audio";
+    const messageType = body.type || body.messageType || "";
+    const isAudio = /audio|ptt/i.test(messageType);
 
     let text;
     if (isAudio) {
-      if (!WHATSAPP_TOKEN) {
-        await handleMetaReply(jid, "Desculpe, não consigo ouvir áudios agora 😊 Pode digitar sua mensagem?");
-        return;
-      }
+      const audioUrl =
+        body.audio?.audioUrl ||
+        body.audio?.url ||
+        (typeof body.audio === "string" ? body.audio : null);
+      if (!audioUrl) return;
       try {
-        const mediaId = message.audio.id;
-        const metaResp = await fetch(
-          `https://graph.facebook.com/v19.0/${mediaId}`,
-          { headers: { Authorization: `Bearer ${WHATSAPP_TOKEN}` } }
-        );
-        const { url } = await metaResp.json();
-        const audioResp = await fetch(url, {
-          headers: { Authorization: `Bearer ${WHATSAPP_TOKEN}` },
-          signal: AbortSignal.timeout(30_000),
-        });
-        const buffer = Buffer.from(await audioResp.arrayBuffer());
-        text = await transcribeAudio(buffer);
-        console.log(`🎙️ ${jid} transcrito: ${text}`);
+        text = await transcribeAudio(audioUrl);
+        console.log(`🎙️ ${phone} transcrito: ${text}`);
       } catch (err) {
-        console.error("❌ Transcrição Meta falhou:", err.message);
-        await handleMetaReply(jid, "Desculpe, não consegui ouvir seu áudio 😊 Pode digitar sua mensagem?");
+        console.error("❌ Transcrição falhou:", err.message);
+        await sendText(phone, "Desculpe, não consegui ouvir seu áudio 😊 Pode digitar sua mensagem?");
         return;
       }
     } else {
-      text = message.text?.body || "";
+      text = body.text?.message || body.message || body.body || "";
     }
 
     if (!text) return;
-    await processMessage(jid, text);
+    await processMessage(phone, text);
   } catch (err) {
     console.error("❌", err.message);
   }
 });
 
-app.get("/qrcode", (_req, res) => {
-  if (!currentQR)
-    return res.status(404).send("QR não disponível — já conectado ou aguardando geração");
-  res.send(`<!DOCTYPE html><html><body style="margin:0;background:#000;display:flex;align-items:center;justify-content:center;height:100vh"><img src="${currentQR}" /></body></html>`);
-});
-
-app.listen(PORT, () => {
-  console.log(`🚀 odontozap rodando na :${PORT}`);
-  startBaileys();
-});
+app.listen(PORT, () => console.log(`🚀 odontozap rodando na :${PORT}`));
